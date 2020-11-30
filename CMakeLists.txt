@@ -17,3 +17,4 @@ target_sources(bluetooth_server
   )
 
 install(TARGETS bluetooth_server DESTINATION bin)
+file(COPY config/kill_process.sh DESTINATION bin)
