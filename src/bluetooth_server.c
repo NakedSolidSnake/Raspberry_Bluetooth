@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/rfcomm.h>
+#include <led.h>
 
 typedef char *(*CommandExec)(void);
 
@@ -15,14 +17,17 @@ typedef struct
 
 char *LedOn(void);
 char *LedOff(void);
-char *LedState(void);
 
 static Commands commands[] = 
 {
     {"LED ON", LedOn},
     {"LED OFF", LedOff},
-    {"LED STATE", LedState}
 };
+
+static LED_t led = {
+        .gpio.pin = 0,
+        .gpio.eMode = eModeOutput
+    };
 
 static void changeToUpper(char *data);
 
@@ -30,6 +35,17 @@ static int commands_amount = sizeof(commands)/sizeof(commands[0]);
 
 int main(int argc, char const *argv[])
 {
+
+    if(system("./sdp.sh") != 0)
+    {
+        exit(1);
+    }
+
+    if(LED_init(&led))
+        return EXIT_FAILURE;
+    
+    LED_set(&led, eStateLow);
+
     struct sockaddr_rc server_address = {0};
     struct sockaddr_rc client_address = {0};
 
@@ -95,18 +111,14 @@ int main(int argc, char const *argv[])
 char *LedOn(void)
 {
     const char *message = "LED On\n";
+    LED_set(&led, eStateHigh);
     return (char *)message;
 }
 
 char *LedOff(void)
 {
     const char *message = "LED Off\n";
-    return (char *)message;
-}
-
-char *LedState(void)
-{
-    const char *message = "LED State\n";
+    LED_set(&led, eStateLow);
     return (char *)message;
 }
 
